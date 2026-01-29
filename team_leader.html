@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>방송 팀장 업무 대시보드 - Premium Edition</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase SDK 설치 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --notion-bg: #0f0f0f;
+            --notion-text: #e3e3e3;
+            --notion-meta-text: #8b8b8b;
+            --notion-desc-text: #b1b1b1;
+            --notion-border: #232323;
+            --notion-hover: #1f1f1f;
+            --notion-blue: #ffffff;
+            --notion-red: #ff5252;
+            --notion-green: #2eb872;
+            --notion-floating-bg: rgba(24, 24, 24, 0.8);
+        }
+
+        body {
+            background-color: var(--notion-bg);
+            color: var(--notion-text);
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .notion-header {
+            height: 220px;
+            background: #1a1a1a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notion-header img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+        }
+
+        .notion-container {
+            max-width: 900px;
+            margin: -60px auto 100px;
+            padding: 0 40px;
+            position: relative;
+        }
+
+        .notion-icon-container {
+            margin-bottom: 20px;
+            display: inline-block;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+            font-size: 78px;
+            cursor: default;
+        }
+
+        .notion-title {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+        }
+
+        .notion-description {
+            font-size: 16px;
+            color: var(--notion-desc-text);
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .notion-divider {
+            height: 1px;
+            background-color: var(--notion-border);
+            margin: 30px 0;
+        }
+
+        /* 통합 액션 바 레이아웃 */
+        .notion-action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--notion-border);
+            padding-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background: var(--notion-bg);
+            z-index: 1000;
+            padding-top: 20px;
+        }
+
+        .notion-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tl-controls {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .notion-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--notion-border);
+            background: var(--notion-floating-bg);
+            backdrop-filter: blur(10px);
+            color: var(--notion-text);
+        }
+
+        .notion-btn:hover {
+            background: var(--notion-hover);
+            transform: translateY(-2px);
+            border-color: #444;
+        }
+
+        .notion-btn-primary {
+            background: #ffffff;
+            border-color: #ffffff;
+            color: #000000;
+        }
+
+        .notion-btn-primary:hover {
+            background: #e0e0e0;
+            border-color: #e0e0e0;
+        }
+
+        .notion-btn-danger {
+            color: #ff5252;
+        }
+
+        .notion-btn-danger:hover {
+            background: rgba(255, 82, 82, 0.1);
+            border-color: #ff5252;
+        }
+
+        /* Dashboard Content */
+        .notion-section {
+            margin-bottom: 60px;
+        }
+
+        .notion-section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        /* 예배일 미니멀 액센트 (블루 제거) */
+        .notion-section.highlight-service {
+            border-left: 2px solid #444;
+            background: rgba(255, 255, 255, 0.015);
+            padding: 20px 0 20px 25px;
+            margin-bottom: 50px;
+            border-top: none;
+        }
+
+        .notion-section.highlight-service .notion-section-title {
+            color: #ffffff;
+            font-size: 17px;
+            margin-left: -5px;
+        }
+
+        .notion-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .notion-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .notion-item:hover {
+            background: var(--notion-hover);
+        }
+
+        .notion-item-content {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            gap: 6px;
+            /* 초밀착 */
+        }
+
+        .notion-item-time {
+            width: 62px;
+            font-size: 13px;
+            color: var(--notion-meta-text);
+            font-variant-numeric: tabular-nums;
+            flex-shrink: 0;
+        }
+
+        .notion-item-icon {
+            color: var(--notion-meta-text);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .notion-item-title {
+            font-size: 15px;
+            font-weight: 500;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-left: 4px;
+            /* 배지와 제목 사이 간격 */
+        }
+
+        /* 필터 컨트롤 */
+        .notion-filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--notion-border);
+            padding-bottom: 15px;
+        }
+
+        .filter-btn {
+            background: none;
+            border: none;
+            color: var(--notion-meta-text);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: var(--notion-hover);
+            color: #fff;
+        }
+
+        .filter-btn.active {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .duty-actions-inline {
+            opacity: 0;
+            display: flex;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .notion-item:hover .duty-actions-inline {
+            opacity: 1;
+        }
+
+        .direct-notion-btn {
+            color: var(--notion-meta-text);
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .direct-notion-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Modal Base */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--notion-border);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Hybrid Modal Styles */
+        .modal-view-state,
+        .modal-edit-state {
+            display: none;
+        }
+
+        .modal.view-mode .modal-view-state {
+            display: block;
+        }
+
+        .modal.edit-mode .modal-edit-state {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .modal-grid-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 20px;
+            margin-bottom: 5px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--notion-meta-text);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            background: #252525;
+            border: 1px solid var(--notion-border);
+            border-radius: 6px;
+            color: #fff;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #ffffff;
+        }
+
+        /* Badges */
+        .notion-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-propresenter {
+            background: rgba(35, 131, 226, 0.2);
+            color: #2383e2;
+        }
+
+        .badge-obs {
+            background: rgba(235, 87, 87, 0.2);
+            color: #eb5757;
+        }
+
+        .badge-atem {
+            background: rgba(242, 153, 74, 0.2);
+            color: #f2994a;
+        }
+
+        .badge-room {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+
+        .badge-youtube {
+            background: rgba(255, 0, 0, 0.15);
+            color: #ff0000;
+        }
+
+        .badge-media {
+            background: rgba(155, 81, 224, 0.2);
+            color: #9b51e0;
+        }
+
+        .badge-worship {
+            background: rgba(186, 104, 200, 0.2);
+            color: #ba68c8;
+        }
+
+        .badge-etc {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--notion-meta-text);
+        }
+
+        .tracker-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--notion-border);
+            border-radius: 6px;
+            color: var(--notion-desc-text);
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .tracker-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border-color: #444;
+        }
+
+        /* Trash List */
+        .trash-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--notion-border);
+            gap: 15px;
+        }
+
+        .trash-info {
+            flex: 1;
+        }
+
+        .trash-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .trash-meta {
+            font-size: 12px;
+            color: var(--notion-meta-text);
+        }
+
+        @media (max-width: 600px) {
+            .notion-container {
+                padding: 0 20px 100px;
+            }
+
+            .notion-title {
+                font-size: 32px;
+            }
+
+            .tl-controls {
+                top: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="notion-header">
+        <img src="cover.png" alt="cover">
+    </div>
+
+    <main class="notion-container">
+        <div class="notion-icon-container">
+            <span class="notion-icon">💼</span>
+        </div>
+        <h1 class="notion-title">방송 업무 대시보드</h1>
+        <p class="notion-description">
+            항목을 클릭하여 상세 정보를 확인하고 관리하세요.<br>
+            <a href="https://www.notion.so/2e42eea8609a80a1a024f9112c0f7ae5?v=2e42eea8609a80cdbc7b000c3c73bed0&source=copy_link"
+                target="_blank" class="tracker-btn">
+                <i data-lucide="layout-list" style="width:16px;height:16px"></i> Overall Tasks with Notion
+            </a>
+        </p>
+
+
+        <div class="notion-action-bar">
+            <div class="notion-filters">
+                <button class="filter-btn active" id="filterDay" onclick="tlDashboard.changeFilter('day')">
+                    <i data-lucide="calendar"
+                        style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px"></i> 요일별
+                </button>
+                <button class="filter-btn" id="filterCategory" onclick="tlDashboard.changeFilter('category')">
+                    <i data-lucide="layers"
+                        style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px"></i> 업무별
+                </button>
+                <button class="filter-btn" id="filterService" onclick="tlDashboard.changeFilter('service')">
+                    <i data-lucide="zap"
+                        style="width:14px;height:14px;display:inline;vertical-align:middle;margin-right:4px"></i> 예배 중심
+                </button>
+            </div>
+            <div class="tl-controls">
+                <button id="addDutyBtn" class="notion-btn notion-btn-primary">
+                    <i data-lucide="plus" style="width:16px;height:16px"></i> New Task
+                </button>
+                <button id="openTrashBtn" class="notion-btn" style="padding: 8px;">
+                    <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+                </button>
+            </div>
+        </div>
+
+
+        <div id="teamLeaderDashboard" class="notion-content">
+            <!-- JavaScript로 동적 생성 -->
+        </div>
+    </main>
+
+    <!-- 하이브리드 통합 모달 -->
+    <div id="dutyModal" class="modal" onclick="tlDashboard.handleOutsideClick(event)">
+        <div class="modal-content" style="max-width: 550px;" onclick="event.stopPropagation()">
+            <!-- View State -->
+            <div class="modal-view-state" style="padding: 40px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+                    <div id="viewCategoryBadge" class="notion-badge">CATEGORY</div>
+                    <button id="switchToEditBtn" class="notion-btn" style="padding: 5px 12px; font-size: 12px;">
+                        <i data-lucide="edit-3" style="width:14px;height:14px"></i> Edit
+                    </button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                    <div id="viewIconContainer" style="color: var(--notion-meta-text);"></div>
+                    <h2 id="viewTitle" style="font-size: 28px; font-weight: 700; margin: 0;">업무 제목</h2>
+                </div>
+                <div
+                    style="display: flex; align-items: center; gap: 10px; color: var(--notion-meta-text); font-size: 14px; margin-bottom: 25px;">
+                    <i data-lucide="user" style="width:14px;height:14px"></i> <span id="viewAssignee">담당자 미지정</span>
+                    <span style="color: var(--notion-border)">|</span>
+                    <i data-lucide="calendar" style="width:14px;height:14px"></i> <span id="viewDay">요일</span>
+                    <span style="color: var(--notion-border)">|</span>
+                    <i data-lucide="clock" style="width:14px;height:14px"></i> <span id="viewTime">00:00</span>
+                </div>
+                <div id="viewDescription"
+                    style="font-size: 15px; line-height: 1.7; color: var(--notion-desc-text); margin-bottom: 40px; white-space: pre-wrap;">
+                    내용이 표시됩니다.</div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--notion-border); padding-top: 30px;">
+                    <button id="deleteDutyBtnInside" class="notion-btn notion-btn-danger">
+                        <i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete
+                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <a id="viewNotionLink" href="#" target="_blank" class="notion-btn notion-btn-primary"
+                            style="text-decoration: none;">
+                            <i data-lucide="external-link" style="width:14px;height:14px"></i> Open Notion
+                        </a>
+                        <button onclick="tlDashboard.hideModal('dutyModal')" class="notion-btn">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit State -->
+            <form id="dutyForm" class="modal-edit-state" style="padding: 30px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px;">
+                    <div id="editIconPreview" style="color: var(--notion-blue);"></div>
+                    <h3 id="editModalTitle" style="font-size: 18px; font-weight: 700; margin: 0;">Manage Task</h3>
+                </div>
+
+                <div class="modal-grid-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <select id="dutyDay">
+                            <option value="화요일">화요일</option>
+                            <option value="수요일">수요일</option>
+                            <option value="목요일">목요일</option>
+                            <option value="금요일">금요일</option>
+                            <option value="토요일">토요일</option>
+                            <option value="주일">주일</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="dutyCategory">
+                            <option value="Director">Director (총괄)</option>
+                            <option value="ProPresenter">ProPresenter</option>
+                            <option value="OBS">OBS</option>
+                            <option value="Atem/Cam/Light">Atem/Cam/Light</option>
+                            <option value="Youtube">Youtube</option>
+                            <option value="Worship Team">Worship Team (찬양팀)</option>
+                            <option value="Etc">Etc</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-grid-row">
+                    <div class="form-group">
+                        <label>Time</label>
+                        <input type="text" id="dutyTime" placeholder="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label>Assignee</label>
+                        <select id="dutyAssignee">
+                            <option value="">지정 안 함</option>
+                            <option value="음향">음향</option>
+                            <option value="프프">프프</option>
+                            <option value="총괄">총괄</option>
+                            <option value="카메라">카메라</option>
+                            <option value="찬양팀">찬양팀</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Task Title</label>
+                    <input type="text" id="dutyTitle" placeholder="What needs to be done?" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="dutyDescription" rows="4" placeholder="Add some details..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Notion Resource Link</label>
+                    <input type="text" id="dutyNotionLink" placeholder="https://notion.so/...">
+                </div>
+
+                <div class="modal-actions"
+                    style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="tlDashboard.hideModal('dutyModal')"
+                        class="notion-btn">Cancel</button>
+                    <button type="submit" id="saveDutyBtn" class="notion-btn notion-btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 휴지통 모달 -->
+    <div id="trashModal" class="modal" onclick="tlDashboard.handleOutsideClick(event)">
+        <div class="modal-content" style="max-width: 500px; padding: 30px;" onclick="event.stopPropagation()">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i data-lucide="trash-2" style="width:20px;height:20px; color: var(--notion-red);"></i>
+                <h3 style="font-size: 18px; margin: 0;">Trash Bin</h3>
+            </div>
+            <div id="trashList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                <!-- 삭제된 업무 목록 -->
+                <p style="text-align: center; color: var(--notion-meta-text); padding: 30px; opacity: 0.5;">Trash is
+                    empty</p>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button onclick="tlDashboard.hideModal('trashModal')" class="notion-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="team_leader.js"></script>
+    <script>
+        // Lucide 초기화 연동
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+
+</html>
