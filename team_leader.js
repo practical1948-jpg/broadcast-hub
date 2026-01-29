@@ -82,6 +82,11 @@ class TeamLeaderDashboard {
             this.trash = trash || [];
 
             this.render();
+
+            // 휴지통 모달이 열려있다면 휴지통 목록도 갱신
+            if (document.getElementById('trashModal').classList.contains('active')) {
+                this.renderTrash();
+            }
         } catch (err) {
             console.error('Error loading data:', err.message);
             const container = document.getElementById('teamLeaderDashboard');
@@ -190,7 +195,7 @@ class TeamLeaderDashboard {
             }
 
             this.hideModal('dutyModal');
-            // Realtime이 렌더링을 트리거함
+            await this.loadInitialData(); // 즉시 갱신
         } catch (err) {
             alert('저장 실패: ' + err.message);
         }
@@ -230,6 +235,7 @@ class TeamLeaderDashboard {
             if (dError) throw dError;
 
             this.hideModal('dutyModal');
+            await this.loadInitialData(); // 즉시 갱신
         } catch (err) {
             alert('삭제 실패: ' + err.message);
         }
@@ -264,6 +270,7 @@ class TeamLeaderDashboard {
                 .eq('id', id);
 
             if (tError) throw tError;
+            await this.loadInitialData(); // 즉시 갱신
         } catch (err) {
             alert('복구 실패: ' + err.message);
         }
