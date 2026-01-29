@@ -21,6 +21,7 @@ class TeamLeaderDashboard {
             'Atem/Cam/Light': 'camera',
             'Youtube': 'youtube',
             'Worship Team': 'music',
+            'Media': 'video',
             'Etc': 'info'
         };
 
@@ -35,8 +36,8 @@ class TeamLeaderDashboard {
             'ATEM': 'Atem/Cam/Light',
             'Atem/Cam/Light': 'Atem/Cam/Light',
             'Youtube': 'Youtube',
-            '미디어': 'Etc',
-            'Media': 'Etc',
+            'Media': 'Media',
+            '미디어': 'Media',
             '기타': 'Etc',
             'Etc': 'Etc'
         };
@@ -48,6 +49,7 @@ class TeamLeaderDashboard {
             'Atem/Cam/Light': 'badge-atem',
             'Youtube': 'badge-youtube',
             'Worship Team': 'badge-worship',
+            'Media': 'badge-media',
             'Etc': 'badge-etc'
         };
 
@@ -285,6 +287,7 @@ class TeamLeaderDashboard {
                 .delete()
                 .eq('id', id);
             if (error) throw error;
+            await this.loadInitialData(); // 즉시 갱신
         } catch (err) {
             alert('삭제 실패: ' + err.message);
         }
@@ -528,6 +531,7 @@ class TeamLeaderDashboard {
                 .delete()
                 .neq('id', '00000000-0000-0000-0000-000000000000'); // 전체 삭제 트릭
             if (error) throw error;
+            await this.loadInitialData(); // 즉시 갱신
         } catch (err) {
             alert('휴지통 비우기 실패: ' + err.message);
         }
