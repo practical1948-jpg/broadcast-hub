@@ -16,6 +16,32 @@
             box-sizing: border-box;
         }
 
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--notion-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+            border: 2px solid var(--notion-bg);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* Firefox support */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #333 var(--notion-bg);
+        }
+
         :root {
             --notion-bg: #0f0f0f;
             --notion-text: #e3e3e3;
